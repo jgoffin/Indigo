@@ -1,7 +1,6 @@
 import csv
 import os
 from config import Config
-=======
 import sys
 
 from config import Config
@@ -14,11 +13,25 @@ from wtforms import BooleanField, DateField, IntegerField, SelectField, SubmitFi
 from wtforms.validators import DataRequired
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import boto3
+import time
+
+
 ALLOWED_EXTENSIONS = {'midi', 'mid'}
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def read_s3_obj(bucket_name, output_file):
+    """ Read from s3 bucket"""
+    try:
+        s3 = boto3.resource('s3')
+        obj = s3.Object(bucket_name, output_file)
+        body = obj.get()['Body'].read().decode('utf-8')
+        return body
+    except:
+        return ""
 
 # Initialization
 # Create an application instance (an object of class Flask)  which handles all requests.
@@ -80,6 +93,11 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+class FileUpload(FlaskForm):
+    username = StringField('Username:', validators=[DataRequired()])
+    password = PasswordField('Password:', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
 db.create_all()
 db.session.commit()
@@ -175,10 +193,30 @@ def upload():
         if not allowed_file(filename):
             flash('Incorrect File Type')
             return redirect(url_for('upload'))
+
+        # save to s3
+        #session = boto3.Session(profile_name='msds603')
+
+        # s3 = boto3.resource('s3')
+        # s3.Bucket('midi-file-upload').upload_file(filename, 'rushil', filename)
+        #s3.Bucket('midi-file-upload').put_object(Key='rushil', Body = request.files['file'])
+        
+        #conn = S3Connection('AKIAQ3AQGNZZF5QAJBFS','AsVkJF9USDapCzu6ugTLu81Xv+pVvuzfItsUPrtU')
+        #bucket = conn.get_bucket('midi-file-upload')
+
         file_dir_path = os.path.join(application.instance_path, 'files')
         file_path = os.path.join(file_dir_path, filename)
+
+        # s3 = boto3.client('s3')
+        # #with open(filename, "rb") as rush:
+        # s3.upload_file(Key = filename, bucket = "midi-file-upload")
         f.save(file_path) # Save file to file_path (instance/ + 'files’ + filename)
 
+        s3 = boto3.resource('s3')
+        #s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+        s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+
+        flash('file uploaded to s3')
         return redirect(url_for('index'))  # Redirect to / (/index) page.
     return render_template('upload.html', form=file)
 
