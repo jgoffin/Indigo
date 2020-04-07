@@ -212,11 +212,16 @@ def upload():
         # s3.upload_file(Key = filename, bucket = "midi-file-upload")
         f.save(file_path) # Save file to file_path (instance/ + 'files’ + filename)
 
-        s3 = boto3.resource('s3')
-        #s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
-        s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+        session = boto3.Session(profile_name='msds603')
+        # Any clients created from this session will use credentials
+        # from the [dev] section of ~/.aws/credentials.
+        dev_s3_client = session.resource('s3')
 
-        flash('file uploaded to s3')
+        #s3 = boto3.resource('s3')
+        #s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+        dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+
+        return('<h1>file uploaded to s3</h1>')
         return redirect(url_for('index'))  # Redirect to / (/index) page.
     return render_template('upload.html', form=file)
 
