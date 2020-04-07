@@ -15,6 +15,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import boto3
 import time
+from io import BytesIO
 
 
 ALLOWED_EXTENSIONS = {'midi', 'mid'}
@@ -203,15 +204,11 @@ def upload():
         
         #conn = S3Connection('AKIAQ3AQGNZZF5QAJBFS','AsVkJF9USDapCzu6ugTLu81Xv+pVvuzfItsUPrtU')
         #bucket = conn.get_bucket('midi-file-upload')
+        #file_memory = io.BytesIO(str.encode(f))
 
-        file_dir_path = os.path.join(application.instance_path, 'files')
-        file_path = os.path.join(file_dir_path, filename)
-
-        # s3 = boto3.client('s3')
-        # #with open(filename, "rb") as rush:
-        # s3.upload_file(Key = filename, bucket = "midi-file-upload")
-        f.save(file_path) # Save file to file_path (instance/ + 'files’ + filename)
-
+        # mem = io.BytesIO()  # transfer stringIO output to Bytes
+        # mem.write(proxy.getvalue().encode('utf-8'))
+        # mem.seek(0)
         session = boto3.Session(profile_name='msds603')
         # Any clients created from this session will use credentials
         # from the [dev] section of ~/.aws/credentials.
@@ -219,10 +216,29 @@ def upload():
 
         #s3 = boto3.resource('s3')
         #s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
-        dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+        dev_s3_client.meta.client.upload_file(buffer, 'midi-file-upload', filename)
+
+        #self.s3.put_object(Bucket=bucket, Key=key, Body=buffer)
+
+        #file_dir_path = os.path.join(application.instance_path, 'files')
+        #file_path = os.path.join(file_dir_path, filename)
+
+        # s3 = boto3.client('s3')
+        # #with open(filename, "rb") as rush:
+        # s3.upload_file(Key = filename, bucket = "midi-file-upload")
+        #f.save(file_path) # Save file to file_path (instance/ + 'files’ + filename)
+
+        #session = boto3.Session(profile_name='msds603')
+        # Any clients created from this session will use credentials
+        # from the [dev] section of ~/.aws/credentials.
+        #dev_s3_client = session.resource('s3')
+
+        #s3 = boto3.resource('s3')
+        #s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+        #dev_s3_client.meta.client.upload_file(file_memory, 'midi-file-upload', filename)
 
         return('<h1>file uploaded to s3</h1>')
-        return redirect(url_for('index'))  # Redirect to / (/index) page.
+        #return redirect(url_for('index'))  # Redirect to / (/index) page.
     return render_template('upload.html', form=file)
 
 
