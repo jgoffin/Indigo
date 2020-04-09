@@ -1,41 +1,27 @@
 import csv
 import os
-from config import Config
 import sys
+from datetime import datetime 
 
 from config import Config
 from flask import render_template, redirect, url_for, request, flash, Flask
-from flask_login import LoginManager, UserMixin, current_user, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, current_user, login_user, \
+    login_required, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
-from wtforms import BooleanField, DateField, IntegerField, SelectField, SubmitField, PasswordField, StringField, validators, Form
+from wtforms import BooleanField, DateField, IntegerField, SelectField, \
+    SubmitField, PasswordField, StringField, validators, Form
 from wtforms.validators import DataRequired
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import boto3
-import time
-from io import BytesIO
-
 
 ALLOWED_EXTENSIONS = {'midi', 'mid'}
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def read_s3_obj(bucket_name, output_file):
-    """ Read from s3 bucket"""
-    try:
-        s3 = boto3.resource('s3')
-        obj = s3.Object(bucket_name, output_file)
-        body = obj.get()['Body'].read().decode('utf-8')
-        return body
-    except:
-        return ""
 
 # Initialization
-# Create an application instance (an object of class Flask)  which handles all requests.
+# Create an application instance which handles all requests.
 application = Flask(__name__)
 application.secret_key = os.urandom(24)
 application.config.from_object(Config)
@@ -47,12 +33,6 @@ db.session.commit()
 # login_manager needs to be initiated before running the app
 login_manager = LoginManager()
 login_manager.init_app(application)
-
-application.config.from_object(Config)
-
-#db = SQLAlchemy(application)
-#db.create_all()
-#db.session.commit()
 
 
 class UploadFileForm(FlaskForm):
@@ -73,10 +53,12 @@ class RegistrationForm(FlaskForm):
     accept_tos = BooleanField('I accept the TOS', [validators.DataRequired()])
     submit = SubmitField('Submit')
 
+
 class LogInForm(FlaskForm):
     username = StringField('Username:', validators=[DataRequired()])
     password = PasswordField('Password:', validators=[DataRequired()])
     submit = SubmitField('Login')
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -95,10 +77,24 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-class FileUpload(FlaskForm):
-    username = StringField('Username:', validators=[DataRequired()])
-    password = PasswordField('Password:', validators=[DataRequired()])
-    submit = SubmitField('Login')
+class Files(db.Model, UserMixin):
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_name = db.Column(db.String(80), nullable=False)
+    orig_filename = db.Column(db.String(120), nullable=False)
+    file_type = db.Column(db.String(120), nullable=False) # mid or mp3 etc
+    model_used = db.Column(db.String(120), nullable=False) # gan, user_upload, rnn, vae, etc
+    our_filename =  db.Column(db.String(80), unique=True, nullable=False)
+    file_upload_timestamp = db.Column(db.String(120), nullable=False)
+    
+    def __init__(self, user_name, orig_filename, file_type, model_used,
+                 our_filename, file_upload_timestamp):
+        self.user_name = user_name
+        self.orig_filename = orig_filename
+        self.file_type = file_type
+        self.model_used = model_used
+        self.our_filename = our_filename
+        self.file_upload_timestamp = file_upload_timestamp
 
 db.create_all()
 db.session.commit()
@@ -110,6 +106,7 @@ db.session.commit()
 @login_manager.user_loader
 def load_user(id):
     return User.query.get(int(id))
+
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -125,21 +122,6 @@ def index():
 
 @application.route('/register',  methods=['GET', 'POST'])
 def register():
-    """
-    Register a new user. Save the username, password and email.
-    """
-    form = RegistrationForm(request.form)
-    if request.method == 'POST' and form.validate():
-        # user = User(form.username.data, form.email.data,
-        #             form.password.data)
-        with open('users.csv', mode='w+', newline='') as accounts_file:
-            accounts_writer = csv.writer(accounts_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            accounts_writer.writerow([form.username.data, form.email.data, form.password.data])
-        # db_session.add(user)
-        flash('Thanks for registering')
-        return redirect(url_for('index'))
-    return render_template('register.html', form=form)
-
     registration_form = RegistrationForm()
     if registration_form.validate_on_submit():
         username = registration_form.username.data
@@ -147,8 +129,8 @@ def register():
         email = registration_form.email.data
 
         user_count = User.query.filter_by(username=username).count() \
-                     + User.query.filter_by(email=email).count()
-        if (user_count > 0):
+            + User.query.filter_by(email=email).count()
+        if user_count > 0:
             return '<h1>Error - Existing user : ' + username \
                    + ' OR ' + email + '</h1>'
         else:
@@ -184,10 +166,12 @@ def logout():
 
 
 @application.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
     """upload a file from a client machine."""
     file = UploadFileForm()  # file : UploadFileForm class instance
-    if file.validate_on_submit():  # Check if it is a POST request and if it is valid.
+    # Check if it is a POST request and if it is valid.
+    if file.validate_on_submit():
         f = file.file_selector.data  # f : Data of FileField
         filename = f.filename
         # filename : filename of FileField
@@ -195,50 +179,50 @@ def upload():
             flash('Incorrect File Type')
             return redirect(url_for('upload'))
 
-        # save to s3
-        #session = boto3.Session(profile_name='msds603')
+        # make directory and save files there
+        cwd = os.getcwd()
 
-        # s3 = boto3.resource('s3')
-        # s3.Bucket('midi-file-upload').upload_file(filename, 'rushil', filename)
-        #s3.Bucket('midi-file-upload').put_object(Key='rushil', Body = request.files['file'])
-        
-        #conn = S3Connection('AKIAQ3AQGNZZF5QAJBFS','AsVkJF9USDapCzu6ugTLu81Xv+pVvuzfItsUPrtU')
-        #bucket = conn.get_bucket('midi-file-upload')
-        #file_memory = io.BytesIO(str.encode(f))
+        file_dir_path = os.path.join(cwd, 'files')
 
-        # mem = io.BytesIO()  # transfer stringIO output to Bytes
-        # mem.write(proxy.getvalue().encode('utf-8'))
-        # mem.seek(0)
+        if not os.path.exists(file_dir_path):
+            os.mkdir(file_dir_path)
+
+        file_path = os.path.join(file_dir_path, filename)
+
+        f.save(file_path)
+
         session = boto3.Session(profile_name='msds603')
         # Any clients created from this session will use credentials
         # from the [dev] section of ~/.aws/credentials.
         dev_s3_client = session.resource('s3')
 
-        #s3 = boto3.resource('s3')
-        #s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
-        dev_s3_client.meta.client.upload_file(buffer, 'midi-file-upload', filename)
+        dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload', filename)
 
-        #self.s3.put_object(Bucket=bucket, Key=key, Body=buffer)
+        if os.path.exists(file_dir_path):
+        	os.system(f"rm -rf {file_dir_path}")
 
-        #file_dir_path = os.path.join(application.instance_path, 'files')
-        #file_path = os.path.join(file_dir_path, filename)
+        user_name = current_user.username
+        orig_filename = filename.rsplit('.', 1)[0]
+        file_type = filename.rsplit('.', 1)[1]
+        model_used = 'user_upload'
 
-        # s3 = boto3.client('s3')
-        # #with open(filename, "rb") as rush:
-        # s3.upload_file(Key = filename, bucket = "midi-file-upload")
-        #f.save(file_path) # Save file to file_path (instance/ + 'files’ + filename)
+        #get num of files user has uploaded thus far
+        num_user_files = Files.query.filter_by(user_name=user_name).count()
+        our_filename = f'{user_name}_{num_user_files}'
+        file_upload_timestamp = datetime.now()
 
-        #session = boto3.Session(profile_name='msds603')
-        # Any clients created from this session will use credentials
-        # from the [dev] section of ~/.aws/credentials.
-        #dev_s3_client = session.resource('s3')
 
-        #s3 = boto3.resource('s3')
-        #s3.meta.client.upload_file(file_path, 'midi-file-upload', filename)
-        #dev_s3_client.meta.client.upload_file(file_memory, 'midi-file-upload', filename)
+        file = Files(user_name, orig_filename, file_type,
+                               model_used, our_filename, file_upload_timestamp)
+        db.session.add(file)
+        db.session.commit()
 
-        return('<h1>file uploaded to s3</h1>')
-        #return redirect(url_for('index'))  # Redirect to / (/index) page.
+        return(f'<h1>{user_name} file uploaded to s3</h1>')
+        return redirect(url_for('music', filename=filename))
+
+        # return new_message
+
+        return redirect(url_for('index'))  # Redirect to / (/index) page.
     return render_template('upload.html', form=file)
 
 
@@ -247,13 +231,16 @@ def demo():
     """ Load demo page showing Magenta """
     return render_template('demo.html')
 
+
 @application.route('/about', methods=['GET', 'POST'])
 def about():
     return render_template('about.html')
 
-@application.route('/music', methods=['GET', 'POST'])
-def music():
-    return render_template('music.html')
+
+@application.route('/music/<filename>', methods=['GET', 'POST'])
+def music(filename):
+    return render_template('music.html', filename=filename)
+
 
 if __name__ == '__main__':
     application.jinja_env.auto_reload = True
