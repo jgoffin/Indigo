@@ -38,27 +38,6 @@ class User(db.Model):
         else:
             return 'Invalid Password'
 
-<<<<<<< HEAD
-class Files(db.Model, UserMixin):
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_name = db.Column(db.String(80), nullable=False)
-    orig_filename = db.Column(db.String(120), nullable=False)
-    file_type = db.Column(db.String(120), nullable=False) # mid or mp3 etc
-    model_used = db.Column(db.String(120), nullable=False) # gan, user_upload, rnn, vae, etc
-    our_filename =  db.Column(db.String(80), unique=True, nullable=False)
-    file_upload_timestamp = db.Column(db.String(120), nullable=False)
-    
-    def __init__(self, user_name, orig_filename, file_type, model_used,
-                 our_filename, file_upload_timestamp):
-        self.user_name = user_name
-        self.orig_filename = orig_filename
-        self.file_type = file_type
-        self.model_used = model_used
-        self.our_filename = our_filename
-        self.file_upload_timestamp = file_upload_timestamp
-=======
->>>>>>> 7b0a215b1ebeeca1fd5198c8413d6bcc68164686
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username:', validators=[DataRequired()])
