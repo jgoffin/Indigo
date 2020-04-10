@@ -19,18 +19,18 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
-    
+
     def __init__(self, username, email, password):
         self.username = username
         self.email = email
         self.set_password(password)
-        
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-        
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-    
+
     def change_password(self, old, new):
         if check_password_hash(self.password_hash, old):
             self.set_password(new)
@@ -38,6 +38,7 @@ class User(db.Model):
         else:
             return 'Invalid Password'
 
+<<<<<<< HEAD
 class Files(db.Model, UserMixin):
     
     id = db.Column(db.Integer, primary_key=True)
@@ -56,13 +57,15 @@ class Files(db.Model, UserMixin):
         self.model_used = model_used
         self.our_filename = our_filename
         self.file_upload_timestamp = file_upload_timestamp
+=======
+>>>>>>> 7b0a215b1ebeeca1fd5198c8413d6bcc68164686
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username:', validators=[DataRequired()])
     email = StringField('Email:', validators=[DataRequired()])
     password = PasswordField('Password:', validators=[DataRequired()])
     submit = SubmitField('Submit')
-    
+
 
 db.create_all()
 db.session.commit()

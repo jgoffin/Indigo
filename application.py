@@ -1,7 +1,11 @@
 import csv
 import os
 import sys
+<<<<<<< HEAD
 from datetime import datetime 
+=======
+from datetime import datetime
+>>>>>>> 7b0a215b1ebeeca1fd5198c8413d6bcc68164686
 
 from config import Config
 from flask import render_template, redirect, url_for, request, flash, Flask
@@ -77,6 +81,7 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+<<<<<<< HEAD
 class Files(db.Model, UserMixin):
     
     id = db.Column(db.Integer, primary_key=True)
@@ -87,6 +92,19 @@ class Files(db.Model, UserMixin):
     our_filename =  db.Column(db.String(80), unique=True, nullable=False)
     file_upload_timestamp = db.Column(db.String(120), nullable=False)
     
+=======
+
+class Files(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    user_name = db.Column(db.String(80), nullable=False)
+    orig_filename = db.Column(db.String(120), nullable=False)
+    file_type = db.Column(db.String(120), nullable=False)  # mid or mp3 etc
+    # gan, user_upload, rnn, vae, etc
+    model_used = db.Column(db.String(120), nullable=False)
+    our_filename = db.Column(db.String(80), unique=True, nullable=False)
+    file_upload_timestamp = db.Column(db.String(120), nullable=False)
+
+>>>>>>> 7b0a215b1ebeeca1fd5198c8413d6bcc68164686
     def __init__(self, user_name, orig_filename, file_type, model_used,
                  our_filename, file_upload_timestamp):
         self.user_name = user_name
@@ -96,6 +114,10 @@ class Files(db.Model, UserMixin):
         self.our_filename = our_filename
         self.file_upload_timestamp = file_upload_timestamp
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7b0a215b1ebeeca1fd5198c8413d6bcc68164686
 db.create_all()
 db.session.commit()
 
@@ -137,7 +159,7 @@ def register():
             user = User(username, email, password)
             db.session.add(user)
             db.session.commit()
-            return redirect(url_for('index'))
+            return redirect(url_for('login'))
     return render_template('register.html', form=registration_form)
 
 
@@ -153,7 +175,7 @@ def login():
         # Login and validate the user.
         if user is not None and user.check_password(password):
             login_user(user)
-            return redirect(url_for('index'))
+            return redirect(url_for('upload'))
 
     return render_template('login.html', form=login_form)
 
@@ -188,6 +210,7 @@ def upload():
             os.mkdir(file_dir_path)
 
         file_path = os.path.join(file_dir_path, filename)
+<<<<<<< HEAD
 
         f.save(file_path)
 
@@ -221,8 +244,46 @@ def upload():
         return redirect(url_for('music', filename=filename))
 
         # return new_message
+=======
+>>>>>>> 7b0a215b1ebeeca1fd5198c8413d6bcc68164686
 
-        return redirect(url_for('index'))  # Redirect to / (/index) page.
+        f.save(file_path)
+
+        # USE FOR REMOTE - msds603 is my alias in ./aws file using
+        # secret key from iam on jacobs account
+
+        # session = boto3.Session(profile_name='msds603')
+        # Any clients created from this session will use credentials
+        # from the [dev] section of ~/.aws/credentials.
+        # dev_s3_client = session.resource('s3')
+        # dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload',
+        # filename)
+
+        # comment outnext two lines when not on local and not beanstalk
+        s3 = boto3.resource('s3')
+
+        user_name = current_user.username
+        orig_filename = filename.rsplit('.', 1)[0]
+        file_type = filename.rsplit('.', 1)[1]
+        model_used = 'user_upload'
+
+        # get num of files user has uploaded thus far
+        num_user_files = Files.query.filter_by(user_name=user_name).count()
+        our_filename = f'{user_name}_{num_user_files}'
+        file_upload_timestamp = datetime.now()
+
+        file = Files(user_name, orig_filename, file_type,
+                     model_used, our_filename, file_upload_timestamp)
+        db.session.add(file)
+        db.session.commit()
+
+        s3.meta.client.upload_file(file_path, 'midi-file-upload', our_filename)
+
+        if os.path.exists(file_dir_path):
+            os.system(f"rm -rf {file_dir_path}")
+
+        #return(f'<h1>{user_name} file uploaded to s3</h1>')
+        return redirect(url_for('music'))  # Redirect to / (/index) page.
     return render_template('upload.html', form=file)
 
 
@@ -237,9 +298,17 @@ def about():
     return render_template('about.html')
 
 
+<<<<<<< HEAD
 @application.route('/music/<filename>', methods=['GET', 'POST'])
 def music(filename):
     return render_template('music.html', filename=filename)
+=======
+@application.route('/music', methods=['GET', 'POST'])
+@login_required
+def music():
+    #uploads = Files.query.filter_by(username=current_user.username).all()
+    return render_template('music.html')#, uploads=uploads)
+>>>>>>> 7b0a215b1ebeeca1fd5198c8413d6bcc68164686
 
 
 if __name__ == '__main__':
