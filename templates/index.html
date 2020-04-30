@@ -13,20 +13,43 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <script src="../static/script/nav_script.js"></script>
 
   </head>
   <body>
 
     <div class="container">
 
-      <h1>INDIGO</h1>
+      <!-- Code from W3 schools Top Navigation Menu -->
+      <div class="topnav">
+        <a href="index" class="active">INDIGO</a>
+        <!-- Navigation links (hidden by default) -->
+        <div id="myLinks">
+          <a href="buy">BUY</a>
+          <a href="login">Login</a>
+          <a href="profile">My Songs</a>
+          <a href="about">About</a>
+          <a href="logout">Logout</a>
 
-      <div class="nav">
-
+        </div>
+        <!-- "Hamburger menu" / "Bar icon" to toggle the navigation links -->
+        <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+          <i class="fa fa-bars"></i>
+        </a>
       </div>
 
-      <div class="">
-        <button type="button" name="button" onclick="location.href='register';">GET STARTED</button>
+
+
+
+
+      <h1>INDIGO</h1>
+
+
+      <div class="btns">
+        <button type="button" name="button" style="display: inline; margin: auto; " onclick="location.href='register';">SIGN UP</button>
+        <button type="button" name="button" style="display: inline; margin: auto; float:right;" onclick="location.href='login';">LOGIN</button>
       </div>
 
       <div class="filler"></div>

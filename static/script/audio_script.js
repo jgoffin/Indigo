@@ -523,7 +523,8 @@ var Framer = {
             {
                 artist: "",
                 song: "",
-                url: "http://"+"katiebaca.com/tutorial/odd-look.mp3"
+                url:
+                 "http://"+"katiebaca.com/tutorial/odd-look.mp3"
             }
         ],
 
@@ -634,11 +635,10 @@ var Framer = {
 
 /////////////////
 
-function playMusic(obj)
-    {
-        var selectedValue = obj.options[obj.selectedIndex].value;
-        // get song from s3
-        // change song in player
-        // Player.tracks.url = 
-        alert(selectedValue);
-    }
+
+function redirectToMusic(obj){
+    var selectedValue = obj.options[obj.selectedIndex].value;
+    window.location  = '/test_playback/'+selectedValue;
+}
+
+// code to download midi file https://codepen.io/iansimon/pen/Bxgbgz/
