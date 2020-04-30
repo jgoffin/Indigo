@@ -202,6 +202,9 @@ def upload():
     """
     file = UploadFileForm()  # file : UploadFileForm class instance
     uploads = Files.query.filter_by(user_name=current_user.username).all()
+
+    invalid_file_extension = False
+    dup_file = False
     
     # Check if it is a POST request and if it is valid.
     if file.validate_on_submit():
@@ -209,6 +212,7 @@ def upload():
         filename = f.filename
         # filename : filename of FileField
         if not allowed_file(filename):
+            #return render_template('upload.html', form=file, uploads=uploads, invalid_file_extension = True, dup_file = F)
             flash('Incorrect File Type')
             return redirect(url_for('upload'))
 
@@ -235,32 +239,43 @@ def upload():
         our_filename = f'{user_name}_{num_user_files}'
         file_upload_timestamp = datetime.now()
 
-        file = Files(user_name, orig_filename, file_type,
-                     model_used, our_filename, file_upload_timestamp)
-        db.session.add(file)
-        db.session.commit()
+        user_file_list = db.session.query(Files.orig_filename).filter(Files.user_name==user_name).all()
+        user_file_list = [elem[0] for elem in user_file_list]
 
-        # TAKES CARE OF DEV OR local
-        if on_dev:
-            s3 = boto3.resource('s3')
-            s3.meta.client.upload_file(file_path, 'midi-file-upload', our_filename)
+        if orig_filename in user_file_list:
+            #return render_template('upload.html', form=file, uploads=uploads, invalid_file_extension = False, dup_file = True)
 
-        # USE FOR REMOTE - msds603 is my alias in ./aws credentials file using
-        # secret key from iam on jacobs account
-        else:
-           session = boto3.Session(profile_name='msds603') 
-           dev_s3_client = session.resource('s3')
-           dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload', our_filename) #ADD TO DEV
+            flash('You have already uploaded a file with this name, please upload a new file or rename this one to upload.')
+            return redirect(url_for('upload'))
+
+        #print()
+
+        # file = Files(user_name, orig_filename, file_type,
+        #              model_used, our_filename, file_upload_timestamp)
+        # db.session.add(file)
+        # db.session.commit()
+
+        # # TAKES CARE OF DEV OR local
+        # if on_dev:
+        #     s3 = boto3.resource('s3')
+        #     s3.meta.client.upload_file(file_path, 'midi-file-upload', our_filename)
+
+        # # USE FOR REMOTE - msds603 is my alias in ./aws credentials file using
+        # # secret key from iam on jacobs account
+        # else:
+        #    session = boto3.Session(profile_name='msds603') 
+        #    dev_s3_client = session.resource('s3')
+        #    dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload', our_filename) #ADD TO DEV
 
 
-        if os.path.exists(file_dir_path):
-            os.system(f"rm -rf {file_dir_path}")
+        # if os.path.exists(file_dir_path):
+        #     os.system(f"rm -rf {file_dir_path}")
             
         
 
         return(f'<h1>{user_name} file uploaded to s3</h1>')
 
-    return render_template('upload.html', form=file, uploads=uploads)
+    return render_template('upload.html', form=file, uploads=uploads, invalid_file_extension = False, dup_file = False)
 
 
 @application.route('/demo', methods=['GET', 'POST'])
