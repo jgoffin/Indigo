@@ -20,7 +20,7 @@ import boto3
 
 ALLOWED_EXTENSIONS = {'midi', 'mid'}
 
-on_dev = True
+on_dev = False
 
 # Initialization
 # Create an application instance which handles all requests.
@@ -166,13 +166,10 @@ def login():
         # Login and validate the user.
         if user is not None and user.check_password(password):
             login_user(user)
-<<<<<<< HEAD
             return redirect(url_for('index'))
-=======
             return redirect(url_for('profile'))
         else:
             flash('Incorrect Password')
->>>>>>> aa5f4eb107184c400d03986b83cd05bf2116a8f2
 
     return render_template('login.html', form=login_form)
 
@@ -253,7 +250,7 @@ def upload():
         else:
            session = boto3.Session(profile_name='msds603') 
            dev_s3_client = session.resource('s3')
-           dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload', filename)
+           dev_s3_client.meta.client.upload_file(file_path, 'midi-file-upload', our_filename) #ADD TO DEV
 
 
         if os.path.exists(file_dir_path):
@@ -261,15 +258,9 @@ def upload():
             
         
 
-<<<<<<< HEAD
         return(f'<h1>{user_name} file uploaded to s3</h1>')
-        return redirect(url_for('index'))  # Redirect to / (/index) page.
-    return render_template('upload.html', form=file)
-=======
-        return redirect(url_for('music'))  # Redirect to / (/index) page.
 
     return render_template('upload.html', form=file, uploads=uploads)
->>>>>>> aa5f4eb107184c400d03986b83cd05bf2116a8f2
 
 
 @application.route('/demo', methods=['GET', 'POST'])
@@ -287,12 +278,7 @@ def about():
 @application.route('/music', methods=['GET', 'POST'])
 #@login_required
 def music():
-<<<<<<< HEAD
     uploads = Files.query.filter_by(username=current_user.username).all()
-    return render_template('music.html', uploads=uploads)
-=======
-    uploads = Files.query.filter_by(user_name=current_user.username).all()
-    
     return render_template('music.html', uploads=uploads)
 
 
@@ -337,7 +323,6 @@ def test_playback(filename):
 
     return render_template('test_playback.html', midi_file=filename+'.mid')
 
->>>>>>> aa5f4eb107184c400d03986b83cd05bf2116a8f2
 
 @application.route('/drums', methods=['GET', 'POST'])
 def drums():
