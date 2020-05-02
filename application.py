@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 from config import Config
-from flask import render_template, redirect, url_for, request, flash, Flask
+from flask import render_template, redirect, url_for, request, flash, Flask, send_file
 from flask_login import LoginManager, UserMixin, current_user, login_user, \
     login_required, logout_user
 from flask_sqlalchemy import SQLAlchemy
@@ -19,6 +19,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import boto3
 
 ALLOWED_EXTENSIONS = {'midi', 'mid'}
+exporting_threads = {}
 
 on_dev = False
 
@@ -193,6 +194,95 @@ def profile():
     return render_template('profile.html', uploads=uploads, username=current_user.username)
 
 
+
+
+
+
+def midimp3_convert(midi_file_orig):
+    cwd = os.getcwd()
+
+    ogg_file_path = os.path.join(cwd, 'example.ogg')
+    output_mp3_path = os.path.join(cwd, 'output.mp3')
+
+    #delete example.ogg and output.mp3
+    if os.path.exists(ogg_file_path):
+        os.remove(ogg_file_path)
+    if os.path.exists(output_mp3_path):
+        os.remove(output_mp3_path)
+
+    os.system('fluidsynth -nli -r 48000 -o synth.cpu-cores=2 -T oga -F example.ogg Indigo/FluidR3_GM/FluidR3_GM.sf2 ' + midi_file_orig)
+    ogg_file_path = os.path.join(cwd, 'example.ogg')
+    os.system('avconv -i ' + ogg_file_path + ' -c:a libmp3lame -q:a 2 output.mp3')
+
+    print(os.path.relpath(output_mp3_path))
+
+    return send_file(filename_or_fp = os.path.relpath(output_mp3_path), as_attachment = True)
+
+
+@application.route('/midimp3', methods=['GET', 'POST'])
+def midimp3():
+    file = UploadFileForm()  # file : UploadFileForm class instance
+    
+    # Check if it is a POST request and if it is valid.
+    if file.validate_on_submit():
+        f = file.file_selector.data  # f : Data of FileField
+        filename = f.filename
+
+        cwd = os.getcwd()
+
+        file_dir_path = os.path.join(cwd, 'files')
+
+        if not os.path.exists(file_dir_path):
+            os.mkdir(file_dir_path)
+
+        file_path = os.path.join(file_dir_path, filename)
+
+        f.save(file_path)
+        
+        cwd = os.getcwd()
+
+        midi_file_orig = file_path
+
+        ogg_file_path = os.path.join(file_dir_path, 'example.ogg')
+        output_mp3_path = os.path.join(file_dir_path, 'output.mp3')
+
+        #delete example.ogg and output.mp3
+        if os.path.exists(ogg_file_path):
+            os.remove(ogg_file_path)
+        if os.path.exists(output_mp3_path):
+            os.remove(output_mp3_path)
+
+        os.system('fluidsynth -nli -r 48000 -o synth.cpu-cores=2 -T oga -F ' + ogg_file_path + ' Indigo/FluidR3_GM/FluidR3_GM.sf2 ' + midi_file_orig)
+        os.system('avconv -i ' + ogg_file_path + ' -c:a libmp3lame -q:a 2 ' + output_mp3_path)
+        
+        return send_file(filename_or_fp = os.path.relpath(output_mp3_path), as_attachment = True)
+
+
+    return render_template('midimp3.html', form=file)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @application.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload():
@@ -248,8 +338,6 @@ def upload():
             flash('You have already uploaded a file with this name, please upload a new file or rename this one to upload.')
             return redirect(url_for('upload'))
 
-        #print()
-
         # file = Files(user_name, orig_filename, file_type,
         #              model_used, our_filename, file_upload_timestamp)
         # db.session.add(file)
@@ -273,9 +361,10 @@ def upload():
             
         
 
-        return(f'<h1>{user_name} file uploaded to s3</h1>')
+        #return(f'<h1>{user_name} file uploaded to s3</h1>')
 
     return render_template('upload.html', form=file, uploads=uploads, invalid_file_extension = False, dup_file = False)
+
 
 
 @application.route('/demo', methods=['GET', 'POST'])

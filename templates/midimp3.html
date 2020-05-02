@@ -17,9 +17,6 @@
 
     <script type="text/javascript" src="../static/script/audio_script.js"></script>
 
-    <!-- UPLOAD STUFF -->
-    <script src="../static/script/upload_progbarv2.js"></script>
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -62,44 +59,17 @@
 
         <form method="POST" enctype="multipart/form-data" onsubmit="uploadFile()"> <!-- post : handle submission -->
           <h1>INDIGO</h1>
-            <h3>File Upload</h3>
+            <h3>Midi to Mp3</h3>
             <div class="formArea">
             {{ form.csrf_token }} <!--  render the form's CSRF field like normal. -->
 
             {{ form.file_selector }}
             <div class="filler"></div>
-            <br/>
-            
-            {% with messages = get_flashed_messages() %}
-              {% if messages %}
-                <script>
-                  var messages = {{ messages | safe }};
-                  for (var i=0; i<messages.length; i++) {
-                  alert(messages[i]);
-                }
-                </script>
-              {% endif %}
-            {% endwith %}
-
-            <input type="submit">
 
             {{ form.submit }}
 
           </div>
         </form>
-
-        <br></br>
-
-        <div class="progress">
-          <div id = "progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%
-          </div>
-        </div> 
-
-        <div class="filler">
-
-        </div>
-
-
 
 
     </div> <!-- /container -->
