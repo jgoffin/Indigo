@@ -2,10 +2,10 @@
     "pipeline": {
         "name": "indigo_pipeline",
         "version": 1,
-        "roleArn": "arn:aws:iam::374226464461:role/service-role/AWSCodePipelineServiceRole-us-west2-MSDS603-Week1",
+        "roleArn": "",
         "artifactStore": {
             "type": "S3",
-            "location": "codepipeline-msds603-week1"
+            "location": ""
         },
         "stages": [
             {
