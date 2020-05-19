@@ -2,10 +2,8 @@
 
 # Project Indigo
 
-Google has an open-source project named Magenta that enables users to generate new music through machine learning models. We want to leverage this project to build a platform for artists and music enthusiasts to create a new form of music in ways that no other app allows them to.
-
-Our web application will have a user interface that allows users to dictate the style of music they want to create by uploading their own music file. The app will then use the Magenta platform to output several slices of music in a similar style that the user can choose between.
-
+Google has an open-source project named Magenta that enables users to generate new music through machine learning models. We want to leverage this project to build a platform for artists and music enthusiasts to easily create new forms of music through machine learning. 
+Our web application will have a user interface that allows users to dictate the style of music they want to create by uploading their own music files. The app uses the Magenta platform to interpolate between them and produce a new sample. It can also generate drum tracks to accompany a music file. 
 ## Getting Started
 
 ### The Application:
